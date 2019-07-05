@@ -1,22 +1,76 @@
 from Visualize import init
 import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
 
-def draw_line_graph(xs,ys,ys1=None,xlabel = None,ylabel = None,ylabel1=None,lines_label=[],lines_label1=[],pdf_dir=None,show = False):
+def define_cmap(cmap, n):
+    cm = plt.get_cmap(cmap)
+    cNorm = colors.Normalize(vmin=0, vmax=n)
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
+    return scalarMap
+
+def plot_one_line(ax, xs, ys, line_label, c=None, anotate = False):
+    if c:
+        ax.plot(xs, ys, label=line_label, c=c)
+    else:
+        ax.plot(xs, ys, label=line_label if line_label else 'f(x)')
+    if anotate:
+            for a, b in zip(xs, ys):
+                ax.annotate('%.2f' % (b), (a, b))
+
+def plot_xs_ys_line(xs, ys, ax, lines_label, cmap = None, anotate = False):
+
+    if not isinstance(ys[0], list):
+        if cmap:
+            colors = define_cmap(cmap, 1)
+            plot_one_line(ax,xs,ys,label=lines_label if lines_label else 'f(x)',c=colors.to_rgba(0),anotate=anotate)
+        else:
+            plot_one_line(ax,xs, ys, label=lines_label if lines_label else 'f(x)', anotate=anotate)
+    else:
+        for i, ysi in enumerate(ys):
+            plot_one_line()
+            if cmap:
+                colors = define_cmap( cmap,len(ys))
+                plot_one_line(ax,xs, ysi, line_label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i,c=colors.to_rgba(i),anotate=anotate)
+            else:
+                plot_one_line(ax,xs, ysi, line_label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i)
+
+
+def plot_xs_ys_error_bar(xs, ys, ax, lines_label, cmap = None, anotate = False):
+
+    if not isinstance(ys[0], list):
+        if cmap:
+            colors = define_cmap(cmap,1)
+            print(colors.to_rgba(0))
+            ax.plot(xs, ys, label=lines_label if lines_label else 'f(x)',c = colors.to_rgba(0))
+        else:
+            ax.plot(xs, ys, label=lines_label if lines_label else 'f(x)')
+        if anotate:
+            for a, b in zip(xs, ys):
+                ax.annotate('%.2f' % (b), (a, b))
+    else:
+        for i, ysi in enumerate(ys):
+            if cmap:
+                colors = define_cmap( cmap,len(ys))
+                ax.plot(xs, ysi, label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i,c=colors.to_rgba(i))
+            else:
+                ax.plot(xs, ysi, label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i)
+            if anotate:
+                for a, b in zip(xs, ysi):
+                    ax.annotate('%.2f'%(b),(a, b) )
+
+
+def draw_line_graph(xs,ys,ys1=None,xlabel = None,ylabel = None,ylabel1=None,lines_label=[],lines_label1=[],pdf_dir=None,show = False,anotate = False):
     fig,ax = init(plt.rcParams.get('figure.figsize'))
     if ys1:
         ax1 = ax.twinx()
 
-    if not isinstance(ys[0], list):
-        ax.plot(xs, ys, label=lines_label if lines_label else 'f(x)')
-    else:
-        for i,ysi in enumerate(ys):
-            ax.plot(xs, ysi,label=lines_label[i] if lines_label else r'$f_{%s}i(x)$'%i)
+    plot_xs_ys_line(xs, ys, ax, lines_label, anotate=anotate)
+
+
     if ys1 and ax1:
-        if not isinstance(ys1[0], list):
-            ax1.plot(xs, ys1, label=lines_label1 if lines_label1 else r'f^{2}(x)')
-        else:
-            for i, ysi in enumerate(ys1):
-                ax1.plot(xs, ysi, label=lines_label1[i] if lines_label1 else r'$f^{2}_{%s}i(x)$' % i)
+        plot_xs_ys_line(xs, ys1, ax1, lines_label1, anotate=anotate, cmap='jet')
     if xlabel:
         ax.set_xlabel(xlabel)
     if ylabel:
@@ -32,4 +86,3 @@ def draw_line_graph(xs,ys,ys1=None,xlabel = None,ylabel = None,ylabel1=None,line
         plt.show()
 
 
-draw_line_graph([0,1,2,3,4],[[0,1,2,3,4],[0,1,4,9,16]],ys1=[160,90,40,10,0],xlabel='X',ylabel='Y',ylabel1='Y2',lines_label=['Y=X',r'$Y=X^2$'],lines_label1=r'Y=10X',show=True)
