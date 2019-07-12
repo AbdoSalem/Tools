@@ -1,6 +1,5 @@
 from Visualize import init
 import matplotlib.pyplot as plt
-import numpy as np
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 
@@ -10,7 +9,7 @@ def define_cmap(cmap, n):
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cm)
     return scalarMap
 
-def plot_one_line(ax, xs, ys, line_label, c=None, anotate = False):
+def __plot_one_line(ax, xs, ys, line_label, yerr=None, c=None, anotate = False):
     if c:
         ax.plot(xs, ys, label=line_label, c=c)
     else:
@@ -19,58 +18,46 @@ def plot_one_line(ax, xs, ys, line_label, c=None, anotate = False):
             for a, b in zip(xs, ys):
                 ax.annotate('%.2f' % (b), (a, b))
 
-def plot_xs_ys_line(xs, ys, ax, lines_label, cmap = None, anotate = False):
+def __plot_one_errorbar(ax, xs, ys,line_label, yerr=None, c=None, anotate = False):
+    if c:
+        ax.errorbar(xs, ys, yerr=yerr, label=line_label, c=c,capsize=3)
+    else:
+        ax.errorbar(xs, ys, yerr=yerr, label=line_label if line_label else 'f(x)',capsize=3)
+    if anotate:
+            for a, b in zip(xs, ys):
+                ax.annotate('%.2f' % (b), (a, b))
 
+def __plot_xs_ys_func(plotf,xs, ys, ax, lines_label,yerr = None, cmap = None, anotate = False):
+    print(ys,xs,yerr)
     if not isinstance(ys[0], list):
         if cmap:
             colors = define_cmap(cmap, 1)
-            plot_one_line(ax,xs,ys,label=lines_label if lines_label else 'f(x)',c=colors.to_rgba(0),anotate=anotate)
+            plotf(ax,xs,ys,yerr=yerr, line_label=lines_label if lines_label else 'f(x)',c=colors.to_rgba(0),anotate=anotate)
         else:
-            plot_one_line(ax,xs, ys, label=lines_label if lines_label else 'f(x)', anotate=anotate)
-    else:
-        for i, ysi in enumerate(ys):
-            plot_one_line()
-            if cmap:
-                colors = define_cmap( cmap,len(ys))
-                plot_one_line(ax,xs, ysi, line_label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i,c=colors.to_rgba(i),anotate=anotate)
-            else:
-                plot_one_line(ax,xs, ysi, line_label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i)
-
-
-def plot_xs_ys_error_bar(xs, ys, ax, lines_label, cmap = None, anotate = False):
-
-    if not isinstance(ys[0], list):
-        if cmap:
-            colors = define_cmap(cmap,1)
-            print(colors.to_rgba(0))
-            ax.plot(xs, ys, label=lines_label if lines_label else 'f(x)',c = colors.to_rgba(0))
-        else:
-            ax.plot(xs, ys, label=lines_label if lines_label else 'f(x)')
-        if anotate:
-            for a, b in zip(xs, ys):
-                ax.annotate('%.2f' % (b), (a, b))
+            plotf(ax,xs, ys,yerr=yerr, line_label=lines_label if lines_label else 'f(x)', anotate=anotate)
     else:
         for i, ysi in enumerate(ys):
             if cmap:
                 colors = define_cmap( cmap,len(ys))
-                ax.plot(xs, ysi, label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i,c=colors.to_rgba(i))
+                plotf(ax,xs, ysi,yerr=yerr[i], line_label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i,c=colors.to_rgba(i),anotate=anotate)
             else:
-                ax.plot(xs, ysi, label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i)
-            if anotate:
-                for a, b in zip(xs, ysi):
-                    ax.annotate('%.2f'%(b),(a, b) )
+                plotf(ax,xs, ysi,yerr=yerr[i], line_label=lines_label[i] if lines_label else r'$f_{%s}i(x)$' % i)
 
 
-def draw_line_graph(xs,ys,ys1=None,xlabel = None,ylabel = None,ylabel1=None,lines_label=[],lines_label1=[],pdf_dir=None,show = False,anotate = False):
+def draw_line_graph(xs,ys,ys1=None,xlabel = None,yerr= None,yerr1= None,ylabel = None,ylabel1=None,lines_label=[],lines_label1=[],pdf_dir=None,show = False,anotate = False):
     fig,ax = init(plt.rcParams.get('figure.figsize'))
     if ys1:
         ax1 = ax.twinx()
 
-    plot_xs_ys_line(xs, ys, ax, lines_label, anotate=anotate)
+    f=  __plot_one_errorbar if yerr else __plot_one_line
+
+    f1 = __plot_one_errorbar if yerr1 else __plot_one_line
+
+    __plot_xs_ys_func(f,xs, ys, ax, lines_label,yerr=yerr, anotate=anotate)
 
 
     if ys1 and ax1:
-        plot_xs_ys_line(xs, ys1, ax1, lines_label1, anotate=anotate, cmap='jet')
+        __plot_xs_ys_func(f1,xs, ys1, ax1, lines_label1,yerr=yerr1, anotate=anotate, cmap='jet')
     if xlabel:
         ax.set_xlabel(xlabel)
     if ylabel:
@@ -84,5 +71,7 @@ def draw_line_graph(xs,ys,ys1=None,xlabel = None,ylabel = None,ylabel1=None,line
         plt.savefig(pdf_dir, format='pdf')
     if show:
         plt.show()
+
+
 
 
